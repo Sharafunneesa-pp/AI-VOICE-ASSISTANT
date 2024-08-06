@@ -1,8 +1,21 @@
 import streamlit as st
 from openai import OpenAI
-
+import pyaudio
+import wave
+import io
+from pydub import AudioSegment
 def setup_openai_client(api_key):
     return OpenAI(api_key=api_key)
+
+def convert_wav_to_flac(audio_path):
+    try:
+        audio = AudioSegment.from_wav(audio_path)
+        flac_path = audio_path.replace(".wav", ".flac")
+        audio.export(flac_path, format="flac")
+        return flac_path
+    except Exception as e:
+        st.error(f"Error converting audio: {str(e)}")
+        return None
 
 def transcribe_audio(client, audio_path):
     try:
@@ -42,13 +55,42 @@ def main():
     if api_key:
         client = setup_openai_client(api_key)
         
-        audio_file = st.file_uploader("Upload an audio file", type=["mp3", "wav", "ogg"])
-        
-        if audio_file is not None:
-            with open("uploaded_audio.mp3", "wb") as f:
-                f.write(audio_file.getbuffer())
-            
-            transcribed_text = transcribe_audio(client, "uploaded_audio.mp3")
+        if st.button("Start Recording"):
+            # Real-time audio capture using pyaudio
+            CHUNK = 1024
+            FORMAT = pyaudio.paInt16
+            CHANNELS = 1
+            RATE = 44100
+            RECORD_SECONDS = 5
+            WAVE_OUTPUT_FILENAME = "output.wav"
+
+            audio = pyaudio.PyAudio()
+            stream = audio.open(format=FORMAT, channels=CHANNELS,
+                                rate=RATE, input=True,
+                                frames_per_buffer=CHUNK)
+            frames = []
+
+            st.write("Recording...")
+            for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                data = stream.read(CHUNK)
+                frames.append(data)
+
+            st.write("Finished recording.")
+
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+
+            with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+                wf.setnchannels(CHANNELS)
+                wf.setsampwidth(audio.get_sample_size(FORMAT))
+                wf.setframerate(RATE)
+                wf.writeframes(b''.join(frames))
+
+            # Convert WAV to FLAC
+            flac_file = convert_wav_to_flac(WAVE_OUTPUT_FILENAME)
+            if flac_file:
+                transcribed_text = transcribe_audio(client, flac_file)
             if transcribed_text:
                 st.write("Transcribed Text: ", transcribed_text)
                 ai_response = fetch_ai_response(client, transcribed_text)
