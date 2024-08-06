@@ -33,8 +33,10 @@ def fetch_ai_response(client, input_text):
         )
         # Correctly extract the response content
         if 'choices' in response and len(response['choices']) > 0:
+            # Extracting the content from the first choice
             return response['choices'][0]['message']['content']
         elif hasattr(response, 'choices') and len(response.choices) > 0:
+            # Extracting the content from the first choice
             return response.choices[0].message['content']
         else:
             return 'No response choices found'
