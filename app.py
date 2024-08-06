@@ -13,13 +13,15 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            # Inspect the response object
-            st.write(response)
-            # Access the transcription text from the response
-            return response.get('text', 'Transcription text not found')
+            # Example if 'transcription_text' is the correct attribute
+            if hasattr(response, 'transcription_text'):
+                return response.transcription_text
+            else:
+                return 'Transcription text not found'
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
+
 
 def fetch_ai_response(client, input_text):
     try:
