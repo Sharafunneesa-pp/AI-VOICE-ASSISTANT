@@ -11,13 +11,7 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            st.write(dir(response))  # Inspect attributes
-            st.write(response)       # Print the response object
-            
-            if hasattr(response, 'text'):
-                return response.text
-            else:
-                return 'Transcription text not found'
+            return response.get('text', 'Transcription text not found')
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
@@ -31,12 +25,8 @@ def fetch_ai_response(client, input_text):
                 {"role": "user", "content": input_text}
             ]
         )
-        # Inspect the response object
-        st.write(dir(response))  # List all attributes and methods
-        st.write(response)       # Print the response object
-        
-        # Accessing the message content from the response
-        if response.choices:
+        # Extracting the response content
+        if response.choices and len(response.choices) > 0:
             return response.choices[0].message['content']
         else:
             return 'No response choices found'
@@ -76,10 +66,10 @@ def main():
                 st.write("Transcribed Text: ", transcribed_text)
                 ai_response = fetch_ai_response(client, transcribed_text)
                 if ai_response:
+                    st.write("AI Response: ", ai_response)
                     response_audio_file = "audio_response.mp3"
                     text_to_audio(client, ai_response, response_audio_file)
                     st.audio(response_audio_file)
-                    st.write("AI Response: ", ai_response)
 
 if __name__ == "__main__":
     main()
