@@ -22,39 +22,18 @@ def transcribe_audio(client, audio_path):
         st.error(f"Error transcribing audio: {str(e)}")
         return None
 
-def fetch_ai_response(client, input_text):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": input_text}
-            ]
-        )
-        # Correctly extract the response content
-        if 'choices' in response and len(response['choices']) > 0:
-            # Extracting the content from the first choice
-            return response['choices'][0]['message']['content']
-        elif hasattr(response, 'choices') and len(response.choices) > 0:
-            # Extracting the content from the first choice
-            return response.choices[0].message['content']
-        else:
-            return 'No response choices found'
-    except Exception as e:
-        st.error(f"Error fetching AI response: {str(e)}")
-        return None
 
-def text_to_audio(client, text, audio_path):
-    try:
-        response = client.audio.speech.create(
-            model="tts-1",
-            voice="nova",
-            input=text
-        )
-        with open(audio_path, "wb") as f:
-            f.write(response['audio'])
-    except Exception as e:
-        st.error(f"Error converting text to audio: {str(e)}")
+
+def fetch_ai_response(client,input_text):
+    messages=[{"role":"user","content":input_text}]
+    response=client.chat.completions.create(model="gpt-3.5-turbo-1106",messages=messages)
+    return response.choices[0].message.content
+
+def text_to_audio(client,text,audio_path):
+    response=client.audio.speech.create(model="tts-1",voice="nova",input=text)
+    response.stream_to_file(audio_path)
+
+
 
 def main():
     st.sidebar.title("API KEY")
