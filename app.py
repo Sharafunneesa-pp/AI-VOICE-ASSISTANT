@@ -13,9 +13,13 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            # Example if 'transcription_text' is the correct attribute
-            if hasattr(response, 'transcription_text'):
-                return response.transcription_text
+            # Inspect the response object
+            st.write(dir(response))  # Display available attributes and methods
+            st.write(response)  # Display the full response object
+            
+            # Access transcription text if available
+            if hasattr(response, 'text'):
+                return response.text
             else:
                 return 'Transcription text not found'
     except Exception as e:
