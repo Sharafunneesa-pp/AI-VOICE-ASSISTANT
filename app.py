@@ -34,6 +34,7 @@ def fetch_ai_response(client, input_text):
             model="gpt-3.5-turbo",
             messages=messages
         )
+        # Correctly accessing the message content
         return response.choices[0].message['content']
     except Exception as e:
         st.error(f"Error fetching AI response: {str(e)}")
