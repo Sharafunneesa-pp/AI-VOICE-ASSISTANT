@@ -1,38 +1,8 @@
 import streamlit as st
-import pyaudio
-import wave
-import openai
-import io
-from pydub import AudioSegment
+from openai import OpenAI
 
-# OpenAI API setup
 def setup_openai_client(api_key):
-    openai.api_key = api_key
-    return openai
-
-def convert_wav_to_flac(audio_path):
-    try:
-        audio = AudioSegment.from_wav(audio_path)
-        flac_path = audio_path.replace(".wav", ".flac")
-        audio.export(flac_path, format="flac")
-        return flac_path
-    except Exception as e:
-        st.error(f"Error converting audio: {str(e)}")
-        return None
-
-# def transcribe_audio(client, audio_path):
-#     try:
-#         with open(audio_path, "rb") as audio_file:
-#             response = client.audio.transcriptions.create(
-#                 model="whisper-1",
-#                 file=audio_file
-#             )
-#         return response['text']
-#     except Exception as e:
-#         st.error(f"Error transcribing audio: {str(e)}")
-#         return None
-    
-
+    return OpenAI(api_key=api_key)
 
 def transcribe_audio(client, audio_path):
     try:
@@ -51,6 +21,7 @@ def transcribe_audio(client, audio_path):
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
+
 def fetch_ai_response(client,input_text):
     messages=[{"role":"user","content":input_text}]
     response=client.chat.completions.create(model="gpt-3.5-turbo-1106",messages=messages)
@@ -60,60 +31,32 @@ def text_to_audio(client,text,audio_path):
     response=client.audio.speech.create(model="tts-1",voice="nova",input=text)
     response.stream_to_file(audio_path)
 
+
+
 def main():
     st.sidebar.title("API KEY")
     api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
     st.title("AI Voice Assistant")
-
+    st.write("How can I assist you today?")
+    
     if api_key:
         client = setup_openai_client(api_key)
-
-        st.write("Press the button to start recording...")
-        if st.button("Start Recording"):
-            # Real-time audio capture using pyaudio
-            CHUNK = 1024
-            FORMAT = pyaudio.paInt16
-            CHANNELS = 1
-            RATE = 44100
-            RECORD_SECONDS = 5
-            WAVE_OUTPUT_FILENAME = "output.wav"
-
-            audio = pyaudio.PyAudio()
-            stream = audio.open(format=FORMAT, channels=CHANNELS,
-                                rate=RATE, input=True,
-                                frames_per_buffer=CHUNK)
-            frames = []
-
-            st.write("Recording...")
-            for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-                data = stream.read(CHUNK)
-                frames.append(data)
-
-            st.write("Finished recording.")
-
-            stream.stop_stream()
-            stream.close()
-            audio.terminate()
-
-            with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
-                wf.setnchannels(CHANNELS)
-                wf.setsampwidth(audio.get_sample_size(FORMAT))
-                wf.setframerate(RATE)
-                wf.writeframes(b''.join(frames))
-
-            # Convert WAV to FLAC
-            flac_file = convert_wav_to_flac(WAVE_OUTPUT_FILENAME)
-            if flac_file:
-                transcribed_text = transcribe_audio(client, flac_file)
-                if transcribed_text:
-                    st.write("Transcribed Text: ", transcribed_text)
-                    ai_response = fetch_ai_response(client, transcribed_text)
-                    if ai_response:
-                        st.write("AI Response: ", ai_response)
-                        response_audio_file = "audio_response.mp3"
-                        response_audio_data = text_to_audio(client, ai_response,response_audio_file)
-                        if response_audio_data:
-                            st.audio(io.BytesIO(response_audio_data), format='audio/wav')
+        
+        audio_file = st.file_uploader("Upload an audio file", type=["mp3", "wav", "ogg"])
+        
+        if audio_file is not None:
+            with open("uploaded_audio.mp3", "wb") as f:
+                f.write(audio_file.getbuffer())
+            
+            transcribed_text = transcribe_audio(client, "uploaded_audio.mp3")
+            if transcribed_text:
+                st.write("Transcribed Text: ", transcribed_text)
+                ai_response = fetch_ai_response(client, transcribed_text)
+                if ai_response:
+                    st.write("AI Response: ", ai_response)
+                    response_audio_file = "audio_response.mp3"
+                    text_to_audio(client, ai_response, response_audio_file)
+                    st.audio(response_audio_file)
 
 if __name__ == "__main__":
     main()
