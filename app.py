@@ -11,7 +11,9 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            return response.get('text', 'Transcription text not found')
+            # Directly access the text attribute or method
+            transcription_text = response['text'] if 'text' in response else 'Transcription text not found'
+            return transcription_text
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
