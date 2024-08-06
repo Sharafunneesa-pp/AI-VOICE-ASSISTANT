@@ -9,11 +9,14 @@ def setup_openai_client(api_key):
 def transcribe_audio(client, audio_path):
     try:
         with open(audio_path, "rb") as audio_file:
-            transcription = client.audio.transcriptions.create(
+            response = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file
             )
-            return transcription['text']
+            # Inspect the response object
+            st.write(response)
+            # Access the transcription text from the response
+            return response.get('text', 'Transcription text not found')
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
