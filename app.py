@@ -1,8 +1,6 @@
 import streamlit as st
-from audio_recorder_streamlit import audio_recorder
 import openai
 import base64
-
 
 # Design
 
@@ -38,16 +36,19 @@ def text_to_audio(text, audio_path):
 def main():
     st.sidebar.title("API KEY")
     api_key = st.sidebar.text_input("Enter your OpenAI key", type="password")
-    st.title("Start Speaking")
+    st.title("AI Voice Assistant")
     st.write("How can I assist you today?")
+    
     if api_key:
         setup_openai_client(api_key)
-        recorded_audio = audio_recorder()
-        if recorded_audio:
-            audio_file = "audio.mp3"
-            with open(audio_file, "wb") as f:
-                f.write(recorded_audio)
-            transcribed_text = transcribe_audio(audio_file)
+        
+        audio_file = st.file_uploader("Upload an audio file", type=["mp3", "wav", "ogg"])
+        
+        if audio_file is not None:
+            with open("uploaded_audio.mp3", "wb") as f:
+                f.write(audio_file.getbuffer())
+            
+            transcribed_text = transcribe_audio("uploaded_audio.mp3")
             if transcribed_text:
                 st.write("Transcribed Text: ", transcribed_text)
                 ai_response = fetch_ai_response(transcribed_text)
