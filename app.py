@@ -1,8 +1,6 @@
 import streamlit as st
 from openai import OpenAI
 
-# Design
-
 def setup_openai_client(api_key):
     return OpenAI(api_key=api_key)
 
@@ -13,11 +11,9 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            # Inspect the response object
-            st.write(dir(response))  # Display available attributes and methods
-            st.write(response)  # Display the full response object
+            st.write(dir(response))  # Inspect attributes
+            st.write(response)       # Print the response object
             
-            # Access transcription text if available
             if hasattr(response, 'text'):
                 return response.text
             else:
@@ -26,16 +22,24 @@ def transcribe_audio(client, audio_path):
         st.error(f"Error transcribing audio: {str(e)}")
         return None
 
-
 def fetch_ai_response(client, input_text):
     try:
-        messages = [{"role": "user", "content": input_text}]
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": input_text}
+            ]
         )
-        # Correctly accessing the message content
-        return response.choices[0].message['content']
+        # Inspect the response object
+        st.write(dir(response))  # List all attributes and methods
+        st.write(response)       # Print the response object
+        
+        # Accessing the message content from the response
+        if response.choices:
+            return response.choices[0].message['content']
+        else:
+            return 'No response choices found'
     except Exception as e:
         st.error(f"Error fetching AI response: {str(e)}")
         return None
