@@ -11,9 +11,13 @@ def transcribe_audio(client, audio_path):
                 model="whisper-1",
                 file=audio_file
             )
-            # Directly access the text attribute or method
-            transcription_text = response['text'] if 'text' in response else 'Transcription text not found'
-            return transcription_text
+            # Inspect the response structure
+            if 'text' in response:
+                return response['text']
+            elif hasattr(response, 'text'):
+                return response.text
+            else:
+                return 'Transcription text not found'
     except Exception as e:
         st.error(f"Error transcribing audio: {str(e)}")
         return None
@@ -27,8 +31,10 @@ def fetch_ai_response(client, input_text):
                 {"role": "user", "content": input_text}
             ]
         )
-        # Extracting the response content
-        if response.choices and len(response.choices) > 0:
+        # Correctly extract the response content
+        if 'choices' in response and len(response['choices']) > 0:
+            return response['choices'][0]['message']['content']
+        elif hasattr(response, 'choices') and len(response.choices) > 0:
             return response.choices[0].message['content']
         else:
             return 'No response choices found'
