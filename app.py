@@ -1,15 +1,15 @@
 import streamlit as st
 from openai import OpenAI
 import pyaudio
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from openai import OpenAI
 import os
 from audio_recorder_streamlit import audio_recorder
 load_dotenv()
 from audio_recorder_streamlit import audio_recorder
 
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+# openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 def setup_openai_client(api_key):
     return OpenAI(api_key=api_key)
@@ -58,11 +58,11 @@ def fetch_ai_response(client,input_text):
 
 
 
-def speak(text):
+def speak(text,client):
     player_stream = pyaudio.PyAudio().open(format=pyaudio.paInt16, channels=1, rate=24000, output=True)
     stream_start = False
 
-    with openai_client.audio.speech.with_streaming_response.create(
+    with client.audio.speech.with_streaming_response.create(
             model='tts-1',
             voice='onyx',
             response_format='pcm',
@@ -96,7 +96,7 @@ def main():
                 st.write("Transcribed Text: ", transcribed_text)
                 ai_response = fetch_ai_response(client, transcribed_text)
                 st.write("AI Response: ", ai_response)
-                speak(ai_response)
+                speak(ai_response,client)
 
 if __name__ == "__main__":
     main()
