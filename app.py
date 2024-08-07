@@ -11,7 +11,6 @@ from audio_recorder_streamlit import audio_recorder
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-
 def setup_openai_client(api_key):
     return OpenAI(api_key=api_key)
 
