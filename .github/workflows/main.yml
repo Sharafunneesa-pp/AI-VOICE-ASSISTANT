@@ -1,4 +1,5 @@
 name: Sync to Hugging Face hub
+
 on:
   push:
     branches: [main]
@@ -17,4 +18,6 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://sharafunneesa:$HF_TOKEN@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant main
+        run: |
+          git remote set-url origin https://sharafunneesa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant.git
+          git push origin main
