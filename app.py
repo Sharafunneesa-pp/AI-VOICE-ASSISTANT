@@ -4,18 +4,22 @@ import pyaudio
 import wave
 import io
 from pydub import AudioSegment
+from dotenv import load_dotenv
+from openai import OpenAI
+import pyaudio
+import wave
+import io
+from pydub import AudioSegment
+import os
+load_dotenv()
+from audio_recorder_streamlit import audio_recorder
+
+OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+
 def setup_openai_client(api_key):
     return OpenAI(api_key=api_key)
-
-def convert_wav_to_flac(audio_path):
-    try:
-        audio = AudioSegment.from_wav(audio_path)
-        flac_path = audio_path.replace(".wav", ".flac")
-        audio.export(flac_path, format="flac")
-        return flac_path
-    except Exception as e:
-        st.error(f"Error converting audio: {str(e)}")
-        return None
 
 def transcribe_audio(client, audio_path):
     try:
@@ -35,15 +39,50 @@ def transcribe_audio(client, audio_path):
         st.error(f"Error transcribing audio: {str(e)}")
         return None
 
+
+
+
+
+def setup_openai_client(api_key):
+    return OpenAI(api_key=api_key)
+
+sys_msg = ( 'you are a multimodal AI voice assistant. Your user may request assistance for cooking '
+    ' Generate the most useful and stop after first instruction and say once you completed this let me know and continue after user response '
+    'factual response possible, carefully considering all previous generated text in your response before '
+    'adding new tokens to the response.  just use the context if added. '
+    'Use all of the context of this conversation so your response is relevant to the conversation. Make '
+    'your responses clear and concise, avoiding any verbosity.')
+
+messages = [{'role': 'system', 'content': sys_msg}]
+
+
 def fetch_ai_response(client,input_text):
-    messages=[{"role":"user","content":input_text}]
-    response=client.chat.completions.create(model="gpt-3.5-turbo-1106",messages=messages)
-    return response.choices[0].message.content
+    messages.append({"role":"user","content":input_text})
+    chat_completion=client.chat.completions.create(model="gpt-3.5-turbo-1106",messages=messages)
+    response = chat_completion.choices[0].message
+    messages.append(response)
+    return response.content
 
-def text_to_audio(client,text,audio_path):
-    response=client.audio.speech.create(model="tts-1",voice="nova",input=text)
-    response.stream_to_file(audio_path)
 
+
+def speak(text):
+    player_stream = pyaudio.PyAudio().open(format=pyaudio.paInt16, channels=1, rate=24000, output=True)
+    stream_start = False
+
+    with openai_client.audio.speech.with_streaming_response.create(
+            model='tts-1',
+            voice='onyx',
+            response_format='pcm',
+            input=text,
+    ) as response:
+        silence_threshold = 0.01
+        for chunk in response.iter_bytes(chunk_size=1024):
+            if stream_start:
+                player_stream.write(chunk)
+            else:
+                if max(chunk) > silence_threshold:
+                    player_stream.write(chunk)
+                    stream_start = True
 
 
 def main():
@@ -54,51 +93,18 @@ def main():
     
     if api_key:
         client = setup_openai_client(api_key)
+        recorded_audio=audio_recorder()
+        if recorded_audio:
+                audio_file="audio.mp3"
+                with open(audio_file,"wb") as f:
+                    f.write(recorded_audio)
         
-        if st.button("Start Recording"):
-            # Real-time audio capture using pyaudio
-            CHUNK = 1024
-            FORMAT = pyaudio.paInt16
-            CHANNELS = 1
-            RATE = 44100
-            RECORD_SECONDS = 5
-            WAVE_OUTPUT_FILENAME = "output.wav"
-
-            audio = pyaudio.PyAudio()
-            stream = audio.open(format=FORMAT, channels=CHANNELS,
-                                rate=RATE, input=True,
-                                frames_per_buffer=CHUNK)
-            frames = []
-
-            st.write("Recording...")
-            for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-                data = stream.read(CHUNK)
-                frames.append(data)
-
-            st.write("Finished recording.")
-
-            stream.stop_stream()
-            stream.close()
-            audio.terminate()
-
-            with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
-                wf.setnchannels(CHANNELS)
-                wf.setsampwidth(audio.get_sample_size(FORMAT))
-                wf.setframerate(RATE)
-                wf.writeframes(b''.join(frames))
-
-            # Convert WAV to FLAC
-            flac_file = convert_wav_to_flac(WAVE_OUTPUT_FILENAME)
-            if flac_file:
-                transcribed_text = transcribe_audio(client, flac_file)
-            if transcribed_text:
+                transcribed_text = transcribe_audio(client, audio_file)
                 st.write("Transcribed Text: ", transcribed_text)
                 ai_response = fetch_ai_response(client, transcribed_text)
-                if ai_response:
-                    st.write("AI Response: ", ai_response)
-                    response_audio_file = "audio_response.mp3"
-                    text_to_audio(client, ai_response, response_audio_file)
-                    st.audio(response_audio_file)
+                st.write("AI Response: ", ai_response)
+                speak(ai_response)
 
 if __name__ == "__main__":
     main()
+
