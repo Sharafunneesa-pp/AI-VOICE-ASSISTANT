@@ -25,10 +25,15 @@ jobs:
         run: |
           git remote set-url origin https://sharafunneesa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant.git
           git config pull.rebase false
-          git pull origin main --allow-unrelated-histories
+          git pull origin main --allow-unrelated-histories || true
+      - name: Resolve conflicts
+        run: |
+          git checkout --theirs README.md || true
+          git add README.md
+          git commit -m "Resolved merge conflict in README.md"
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote set-url origin https://sharafunneesa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant.git
-          git push origin main
+          git push origin main || true
