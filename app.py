@@ -1,16 +1,10 @@
 import streamlit as st
 from openai import OpenAI
 import pyaudio
-import wave
-import io
-from pydub import AudioSegment
 from dotenv import load_dotenv
 from openai import OpenAI
-import pyaudio
-import wave
-import io
-from pydub import AudioSegment
 import os
+from audio_recorder_streamlit import audio_recorder
 load_dotenv()
 from audio_recorder_streamlit import audio_recorder
 
