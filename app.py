@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-import pyaudio
+# import pyaudio
 # from dotenv import load_dotenv
 from openai import OpenAI
 import os
