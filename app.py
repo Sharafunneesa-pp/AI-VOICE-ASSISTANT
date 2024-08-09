@@ -5,7 +5,7 @@ from openai import OpenAI
 from openai import OpenAI
 import os
 from audio_recorder_streamlit import audio_recorder
-load_dotenv()
+# load_dotenv()
 from audio_recorder_streamlit import audio_recorder
 
 # OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
