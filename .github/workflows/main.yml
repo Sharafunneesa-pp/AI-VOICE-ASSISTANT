@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
 
-   # to run this workflow manually from the Actions tab
+  # to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -15,25 +15,36 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+
       - name: Configure git
         run: |
           git config --global user.name "your-github-username"
           git config --global user.email "your-email@example.com"
+
       - name: Pull from hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote set-url origin https://sharafunneesa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant.git
           git config pull.rebase false
-          git pull origin main --allow-unrelated-histories || true
+          git pull origin main --allow-unrelated-histories || echo "No changes to pull or conflicts need manual resolution"
+
       - name: Resolve conflicts
         run: |
-          git checkout --theirs README.md || true
-          git add README.md
-          git commit -m "Resolved merge conflict in README.md"
+          # Check for unmerged paths
+          if git diff --name-only --diff-filter=U | grep -q .; then
+            echo "Resolving conflicts..."
+            # Resolve conflicts for all files
+            git checkout --theirs . || true
+            git add . || true
+            git commit -m "Resolved merge conflicts" || echo "No changes to commit"
+          else
+            echo "No conflicts detected"
+          fi
+
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote set-url origin https://sharafunneesa:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/sharafunneesa/AI_Voice_Assistant.git
-          git push origin main || true
+          git push origin main || echo "Push failed"
